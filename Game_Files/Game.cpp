@@ -1,10 +1,17 @@
-// ----------------------------------------------------------------
-// From Game Programming in C++ by Sanjay Madhav
-// Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-// 
-// Released under the BSD License
-// See LICENSE in root directory for full details.
-// ----------------------------------------------------------------
+// In computer graphics, colour buffer is a location in memory containing the
+// colour information for the entire screen. The game writes graphical output
+// into the colour buffer.
+
+// Colour depth = number of bits that represent each pixel. 24 bit means red,
+// green, and blue each use 8 bits. 2^24 different colours. 1920x1080x4bytes=7.9MB
+
+// If the display uses the same colour buffering that the game is writing to,
+// there might be some screen tearing. Double buffering solves this by having
+// 2 colour buffers. The display can read from one buffer, and the game can write
+// into the other. When done, the buffers swap. Sometimes screen tearing still
+// happens if the game is outputting too fast compared to the display. To fix this,
+// we can make the buffers wait till each other are done being used, then swap them.
+// This is called vertical sync.
 
 #include "Game.h"
 
@@ -25,6 +32,7 @@ bool Game::Initialize()
 {
 	// Initialize SDL
 	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
+	// Can initalize different systems such as: SDL_INIT_(AUDIO, VIDEO, HAPTIC, GAMECONTROLLER)
 	if (sdlResult != 0)
 	{
 		SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
@@ -33,12 +41,13 @@ bool Game::Initialize()
 	
 	// Create an SDL Window
 	mWindow = SDL_CreateWindow(
-		"Game Programming in C++ (Chapter 1)", // Window title
+		"Hello World!", // Window title
 		100,	// Top left x-coordinate of window
 		100,	// Top left y-coordinate of window
 		1024,	// Width of window
 		768,	// Height of window
-		0		// Flags (0 for no flags set)
+		0		// Flags (0 for no flags set). Flag examples:
+				// SDL_WINDOW_(FULLSCREEN, FULLSCREEN_DESKTOP, OPENGL, RESIZABLE)
 	);
 
 	if (!mWindow)
@@ -87,7 +96,7 @@ void Game::ProcessInput()
 		switch (event.type)
 		{
 			// If we get an SDL_QUIT event, end loop
-			case SDL_QUIT:
+			case SDL_QUIT: // when user presses x on window
 				mIsRunning = false;
 				break;
 		}
@@ -120,7 +129,7 @@ void Game::UpdateGame()
 		;
 
 	// Delta time is the difference in ticks from last frame
-	// (converted to seconds)
+	// (converted to seconds) teh amount of elapsed game time since the last frame
 	float deltaTime = (SDL_GetTicks() - mTicksCount) / 1000.0f;
 	
 	// Clamp maximum delta time value
@@ -192,6 +201,10 @@ void Game::UpdateGame()
 
 void Game::GenerateOutput()
 {
+	// Drawing in any graphics library for games usually involves the following
+	// steps: 1) Clear back buffer to a colour 2) Draw the entire game scene
+	// 3) Swap the front and back buffers
+
 	// Set draw color to blue
 	SDL_SetRenderDrawColor(
 		mRenderer,
@@ -201,9 +214,10 @@ void Game::GenerateOutput()
 		255		// A
 	);
 	
-	// Clear back buffer
+	// Step 1: clear back buffer to the current draw colour (in this case blue)
 	SDL_RenderClear(mRenderer);
 
+	// Step 2: draw the entire game scene
 	// Draw walls
 	SDL_SetRenderDrawColor(mRenderer, 255, 255, 255, 255);
 	
@@ -211,7 +225,7 @@ void Game::GenerateOutput()
 	SDL_Rect wall{
 		0,			// Top left x
 		0,			// Top left y
-		1024,		// Width
+		1024,		// Width // Generally frowned up to this b/c assumes fixed window size
 		thickness	// Height
 	};
 	SDL_RenderFillRect(mRenderer, &wall);
@@ -230,7 +244,7 @@ void Game::GenerateOutput()
 	// Draw paddle
 	SDL_Rect paddle{
 		static_cast<int>(mPaddlePos.x),
-		static_cast<int>(mPaddlePos.y - paddleH/2),
+		static_cast<int>(mPaddlePos.y - paddleH/2), // to define it in terms of top-left point instead of center.
 		thickness,
 		static_cast<int>(paddleH)
 	};
@@ -245,7 +259,7 @@ void Game::GenerateOutput()
 	};
 	SDL_RenderFillRect(mRenderer, &ball);
 	
-	// Swap front buffer and back buffer
+	// Step 3: Swap front buffer and back buffer
 	SDL_RenderPresent(mRenderer);
 }
 
